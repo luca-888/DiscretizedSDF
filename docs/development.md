@@ -40,6 +40,8 @@ Before evaluation, you should:
 </tbody>
 </table>
 
+**Update:** Now you can also download our checkpoints from [HuggingFace](https://huggingface.co/lalala125/DiscreteSDF).
+
 + Check the dataroot is organized as follows:
 
 ```shell
