@@ -1,0 +1,1 @@
+Namespace(sh_degree=-1, source_path='data/glossy_snythetic_blender/horse', model_path='outputs/best_model/glossy/horse/', images='images', resolution=-1, white_background=True, random_background=True, data_device='cuda', eval=False, use_sdf=True, env_res=512, env_mode='envmap')

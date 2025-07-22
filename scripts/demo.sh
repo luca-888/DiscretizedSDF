@@ -1,0 +1,2 @@
+python eval/free_traj_relit.py -m demo/horse --envmap demo/env/golf.exr --render_mode defer+split_sum
+ffmpeg -framerate 60 -i demo/horse/relight_free/golf/ours_30000/renders/%05d.png -c:v libx264 demo/demo.mp4 
