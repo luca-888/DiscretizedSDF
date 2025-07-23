@@ -106,7 +106,7 @@ python eval_synthetic_shape.py --mesh [MESH_PATH] --object [OBJ_NAME]
 ### Shiny Blender Dataset
 
 
-**Mesh Quality**: We follow the evaulation script from [Ref-NeuS](https://github.com/EnVision-Research/Ref-NeuS). You can evaluate the mesh quality regarding Chamber distrance as follows:
+**Mesh Quality**: We follow the evaulation script from [Ref-NeuS](https://github.com/EnVision-Research/Ref-NeuS). You can evaluate the mesh quality regarding Chamber distance as follows:
 
 ```shell
 python eval/eval_mesh.py
@@ -117,7 +117,7 @@ python eval/eval_mesh.py
 ```shell
 python eval/metrics_mae.py -i/--img_paths [IMG_PATH] -g/--gt_paths [GT_PATH]
 # e.g., 
-# python eval/eval_mesh.py -i result/shiny/coffee/relight/bridge -g data/shiny_blender/coffee/test
+# python eval/metrics_mae.py -i result/shiny/coffee/relight/bridge -g data/shiny_blender/coffee/test
 ```
 
 ### TensoIR Synthetic Dataset
