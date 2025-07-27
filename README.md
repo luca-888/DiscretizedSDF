@@ -99,6 +99,8 @@ We provide a demo checkpoint and a environment map in the `demo` folder. You can
 </tbody>
 </table>
 
+**Update:** Now you can also download our checkpoints from [HuggingFace](https://huggingface.co/lalala125/DiscreteSDF).
+
 ## Training and Evaluation
 
 Please refer to [develop.md](docs/development.md) to learn how to benchmark the DiscretizedSDF and how to train yourself DiscretizedSDF model from the scratch.
