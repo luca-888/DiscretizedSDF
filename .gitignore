@@ -5,7 +5,7 @@ outputs
 output*
 build
 screenshots
-data*
+data
 *.png
 *.hdr
 *.so
