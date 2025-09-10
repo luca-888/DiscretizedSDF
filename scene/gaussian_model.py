@@ -35,7 +35,8 @@ from scene.NVDIFFREC.util import simple_fibonacci_sphere_sampling
 
 class GaussianModel:
     def __init__(self, sh_degree : int, env_mode : str, env_res: int, 
-                 use_sdf=False, use_metallic=True, sphere_init=False):
+                 use_sdf=False, use_metallic=True, sphere_init=False, 
+                 disable_pbr=False):
 
         def build_covariance_from_scaling_rotation(scaling, scaling_modifier, rotation):
             L = build_scaling_rotation(scaling_modifier * scaling, rotation)
@@ -50,6 +51,7 @@ class GaussianModel:
         self.use_metallic = use_metallic
         self.use_sdf = use_sdf
         self.sphere_init = sphere_init
+        self.disable_pbr = disable_pbr  # 🆕 PBR 禁用开关
 
         self.active_sh_degree = 0
         self.max_sh_degree = sh_degree  
@@ -67,16 +69,25 @@ class GaussianModel:
         self.normal_gradient_accum = torch.empty(0)
 
         # brdf setting
-        self.env_mode = env_mode  
-        self.env_res = env_res  
-        self._albedo = torch.empty(0)
-        self._metallic = torch.empty(0)
-        self._roughness = torch.empty(0)
-
-        if self.env_mode == 'envmap':
-            self.envmap = create_trainable_env_rnd(self.env_res, scale=0.0, bias=0.8)
+        if self.disable_pbr:
+            print("🚫 PBR disabled: Creating minimal parameter set")
+            self.env_mode = "none"  # 禁用环境光照
+            self.env_res = env_res
+            self._albedo = torch.empty(0)
+            self._metallic = torch.empty(0) 
+            self._roughness = torch.empty(0)
+            self.envmap = None
         else:
-            raise NotImplementedError
+            self.env_mode = env_mode  
+            self.env_res = env_res  
+            self._albedo = torch.empty(0)
+            self._metallic = torch.empty(0)
+            self._roughness = torch.empty(0)
+
+            if self.env_mode == 'envmap':
+                self.envmap = create_trainable_env_rnd(self.env_res, scale=0.0, bias=0.8)
+            else:
+                raise NotImplementedError
         
         self.albedo_activation = torch.sigmoid
         self.metallic_activation = torch.sigmoid
@@ -163,10 +174,18 @@ class GaussianModel:
     
     @property
     def get_albedo(self):
+        """修改 albedo 属性访问器"""
+        if self.disable_pbr or self._albedo.numel() == 0:
+            # 返回纯白 albedo (让颜色完全由 SH 决定)
+            return torch.ones((self._xyz.shape[0], 3), device=self._xyz.device)
         return self.albedo_activation(self._albedo)
     
     @property
     def get_metallic(self):
+        """修改 metallic 属性访问器"""
+        if self.disable_pbr or self._metallic.numel() == 0:
+            # 返回 0 metallic (完全非金属)
+            return torch.zeros((self._xyz.shape[0], 1), device=self._xyz.device)
         if self.use_metallic:
             return self.metallic_activation(self._metallic)
         else:
@@ -201,8 +220,12 @@ class GaussianModel:
         return normal
 
     
-    @property
+    @property 
     def get_roughness(self):
+        """修改 roughness 属性访问器"""
+        if self.disable_pbr or self._roughness.numel() == 0:
+            # 返回中等粗糙度 0.5 (标准漫反射)
+            return torch.ones((self._xyz.shape[0], 1), device=self._xyz.device) * 0.5
         return self.roughness_activation(self._roughness + self.roughness_bias)
 
     @property
