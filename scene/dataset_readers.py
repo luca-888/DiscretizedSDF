@@ -120,7 +120,7 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
             else:
                 mask = np.ones_like(np.array(image)[:, :, 0]) * 255.
             image = Image.fromarray(image)
-            mask = Image.fromarray(mask)
+            mask = Image.fromarray(mask.astype(np.uint8))
             mask.save('test.png')
 
         cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
