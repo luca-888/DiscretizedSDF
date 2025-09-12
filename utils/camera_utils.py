@@ -106,7 +106,7 @@ def quaternion2rot(quaternion):
     rot = r.as_matrix()
     return rot
 
-def interpolate_camera(cam_list, num_inter=4):
+def interpolate_camera(cam_list, num_inter=4, use_dummy_image=True):
     R_list = Rotation.from_matrix(np.stack([cam.R for cam in cam_list], 0))
     T_list = np.stack([cam.T for cam in cam_list])
     slerp = Slerp(list(range(len(R_list))), R_list)
@@ -115,7 +115,38 @@ def interpolate_camera(cam_list, num_inter=4):
     inter_1d = interp1d(np.array(list(range(len(R_list)))), T_list, axis=0)
     T_inters = inter_1d(times)
     
-    return [Camera(-1, Q_inters.as_matrix()[i], T_inters[i], cam_list[0].FoVx, cam_list[0].FoVy, cam_list[0].original_image, 
-                   torch.ones_like(cam_list[0].original_image), cam_list[0].image_name, -1) for i in list(range(len(times)))]
+    # 获取原始图像尺寸以保持渲染分辨率
+    orig_image = cam_list[0].original_image
+    orig_height, orig_width = orig_image.shape[1], orig_image.shape[2]
+    
+    # 创建小尺寸共享图像以节省显存，但保持正确的渲染分辨率
+    if use_dummy_image:
+        # 创建小尺寸dummy图像，通过override参数设置正确的渲染尺寸
+        shared_dummy_image = torch.zeros((3, 64, 64), dtype=torch.float32, device='cpu')
+        shared_dummy_mask = torch.ones((1, 64, 64), dtype=torch.float32, device='cpu')
+        image_name = "interpolated"
+        print(f"使用小尺寸CPU图像(64x64)，渲染分辨率: {orig_height}x{orig_width}")
+    else:
+        shared_dummy_image = orig_image
+        shared_dummy_mask = torch.ones_like(orig_image)
+        image_name = cam_list[0].image_name
+        print(f"使用完整图像，尺寸: {orig_height}x{orig_width}")
+    
+    # 创建插值相机列表
+    interpolated_cameras = []
+    for i in range(len(times)):
+        if use_dummy_image:
+            # 使用小图像但覆盖尺寸为原始分辨率
+            cam = Camera(-1, Q_inters.as_matrix()[i], T_inters[i], cam_list[0].FoVx, cam_list[0].FoVy, 
+                         shared_dummy_image, shared_dummy_mask, image_name, -1, 
+                         data_device='cpu', override_width=orig_width, override_height=orig_height)
+        else:
+            # 使用完整图像
+            cam = Camera(-1, Q_inters.as_matrix()[i], T_inters[i], cam_list[0].FoVx, cam_list[0].FoVy, 
+                         shared_dummy_image, shared_dummy_mask, image_name, -1, data_device='cuda')
+        interpolated_cameras.append(cam)
+    
+    print(f"插值生成{len(interpolated_cameras)}个相机")
+    return interpolated_cameras
     
     

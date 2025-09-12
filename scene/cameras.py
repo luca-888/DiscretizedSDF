@@ -18,7 +18,8 @@ class Camera(nn.Module):
     def __init__(self, colmap_id, R, T, FoVx, FoVy, image, gt_alpha_mask,
                  image_name, uid,
                  trans=np.array([0.0, 0.0, 0.0]), scale=1.0, data_device = "cuda", 
-                 normal_image=None, albedo_image=None
+                 normal_image=None, albedo_image=None, 
+                 override_width=None, override_height=None
                  ):
         super(Camera, self).__init__()
 
@@ -50,8 +51,13 @@ class Camera(nn.Module):
         self.albedo_image = None
         if albedo_image is not None:
             self.albedo_image = albedo_image
-        self.image_width = self.original_image.shape[2]
-        self.image_height = self.original_image.shape[1]
+        # 允许显式覆盖图像尺寸（用于插值相机）
+        if override_width is not None and override_height is not None:
+            self.image_width = override_width
+            self.image_height = override_height
+        else:
+            self.image_width = self.original_image.shape[2]
+            self.image_height = self.original_image.shape[1]
         self.gt_alpha_mask = gt_alpha_mask
         self.focal_x = fov2focal(FoVx, self.image_width)
         self.focal_y = fov2focal(FoVy, self.image_height)
@@ -62,9 +68,12 @@ class Camera(nn.Module):
             if self.original_normal_image is not None:
                 self.original_normal_image *= gt_alpha_mask.to(self.data_device)
         else:
-            self.original_image *= torch.ones((1, self.image_height, self.image_width), device=self.data_device)
-            if self.original_normal_image is not None:
-                    self.original_normal_image *= torch.ones((1, self.image_height, self.image_width), device=self.data_device)
+            # 对于插值相机，不需要修改图像内容
+            if override_width is None and override_height is None:
+                # 只对正常相机应用mask
+                self.original_image *= torch.ones((1, self.image_height, self.image_width), device=self.data_device)
+                if self.original_normal_image is not None:
+                        self.original_normal_image *= torch.ones((1, self.image_height, self.image_width), device=self.data_device)
 
         self.zfar = 100.0
         self.znear = 0.01
